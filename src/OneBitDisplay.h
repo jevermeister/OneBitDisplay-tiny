@@ -47,8 +47,6 @@ enum {
     OBD_CHIP_NA = 0,
     OBD_CHIP_SSD13xx, // OLED
     OBD_CHIP_SH11xx, // OLED
-    OBD_CHIP_SSD16xx, // EPD
-    OBD_CHIP_UC8151, // EPD
     OBD_CHIP_COUNT
 };
 
@@ -90,45 +88,6 @@ enum {
   LCD_HX1230,
   LCD_NOKIA5110,
   LCD_VIRTUAL,
-  SHARP_144x168,
-  SHARP_400x240,
-#ifndef __AVR__
-  LCD_ST7302,
-#endif
-  EPD42_400x300, // WFT0420CZ15
-  EPD29_128x296,
-  EPD29B_128x296,
-  EPD29R_128x296,
-  EPD29Y_128x296, // DEPG0290YN
-  EPD293_128x296,
-  EPD42R_400x300,
-  EPD42R2_400x300, // GDEQ042Z21
-  EPD213B_104x212,
-  EPD213R_104x212,
-  EPD213R2_122x250, // DEPG0213RW
-  EPD213R_104x212_d,
-  EPD213_104x212,
-  EPD213_122x250, // waveshare
-  EPD213B_122x250, // GDEY0213B74
-  EPD154_152x152, // GDEW0154M10
-  EPD154R_152x152,
-  EPD154Y_152x152, // DEPG0154YN
-  EPD154_200x200, // waveshare
-  EPD27_176x264, // waveshare
-  EPD27b_176x264, // GDEY027T91
-  EPD266_152x296, // GDEY0266T90
-  EPD31R_168x296, // DEPG0310RW
-  EPD37Y_240x416, // DEPG0370YN
-  EPD37_240x416, // GDEY037T03
-  EPD579_792x272, // GDEY0579T93
-#ifndef __AVR__
-    // requires too much RAM to run on AVR
-  EPD583R_600x448,
-  EPD74R_640x384,
-#endif
-  EPD102_80x128, // not working yet
-  EPD47_540x960, // not working yet
-  EPD35R_184x384, // Hanshow Nebular 3.5" BWR
   LCD_COUNT
 };
 
@@ -156,88 +115,6 @@ enum {
   ANGLE_270,
   ANGLE_FLIPX,
   ANGLE_FLIPY
-};
-
-// EPD29_296x128 commands
-// (UC8151)
-enum reg {
-    UC8151_PSR      = 0x00,
-    UC8151_PWR      = 0x01,
-    UC8151_POF      = 0x02,
-    UC8151_PFS      = 0x03,
-    UC8151_PON      = 0x04,
-    UC8151_PMES     = 0x05,
-    UC8151_BTST     = 0x06,
-    UC8151_DSLP     = 0x07,
-    UC8151_DTM1     = 0x10,
-    UC8151_DSP      = 0x11,
-    UC8151_DRF      = 0x12,
-    UC8151_DTM2     = 0x13,
-    UC8151_LUT_VCOM = 0x20,
-    UC8151_LUT_WW   = 0x21,
-    UC8151_LUT_BW   = 0x22,
-    UC8151_LUT_WB   = 0x23,
-    UC8151_LUT_BB   = 0x24,
-    UC8151_PLL      = 0x30,
-    UC8151_TSC      = 0x40,
-    UC8151_TSE      = 0x41,
-    UC8151_TSR      = 0x43,
-    UC8151_TSW      = 0x42,
-    UC8151_CDI      = 0x50,
-    UC8151_LPD      = 0x51,
-    UC8151_TCON     = 0x60,
-    UC8151_TRES     = 0x61,
-    UC8151_REV      = 0x70,
-    UC8151_FLG      = 0x71,
-    UC8151_AMV      = 0x80,
-    UC8151_VV       = 0x81,
-    UC8151_VDCS     = 0x82,
-    UC8151_PTL      = 0x90,
-    UC8151_PTIN     = 0x91,
-    UC8151_PTOU     = 0x92,
-    UC8151_PGM      = 0xa0,
-    UC8151_APG      = 0xa1,
-    UC8151_ROTP     = 0xa2,
-    UC8151_CCSET    = 0xe0,
-    UC8151_PWS      = 0xe3,
-    UC8151_TSSET    = 0xe5
-  };
-
-// EPD213_122x250 (SSD1608) commands
-enum reg2 {
-    SSD1608_DRIVER_CONTROL = 0x01,
-    SSD1608_GATE_VOLTAGE = 0x03,
-    SSD1608_SOURCE_VOLTAGE = 0x04,
-    SSD1608_DISPLAY_CONTROL = 0x07,
-    SSD1608_NON_OVERLAP = 0x0B,
-    SSD1608_BOOSTER_SOFT_START = 0x0C,
-    SSD1608_GATE_SCAN_START = 0x0F,
-    SSD1608_DEEP_SLEEP = 0x10,
-    SSD1608_DATA_MODE = 0x11,
-    SSD1608_SW_RESET = 0x12,
-    SSD1608_TEMP_WRITE = 0x1A,
-    SSD1608_TEMP_READ = 0x1B,
-    SSD1608_TEMP_CONTROL = 0x1C,
-    SSD1608_TEMP_LOAD = 0x1D,
-    SSD1608_MASTER_ACTIVATE = 0x20,
-    SSD1608_DISP_CTRL1 = 0x21,
-    SSD1608_DISP_CTRL2 = 0x22,
-    SSD1608_WRITE_RAM = 0x24,
-    SSD1608_WRITE_ALTRAM = 0x26,
-    SSD1608_READ_RAM = 0x25,
-    SSD1608_VCOM_SENSE = 0x28,
-    SSD1608_VCOM_DURATION = 0x29,
-    SSD1608_WRITE_VCOM = 0x2C,
-    SSD1608_READ_OTP = 0x2D,
-    SSD1608_WRITE_LUT = 0x32,
-    SSD1608_WRITE_DUMMY = 0x3A,
-    SSD1608_WRITE_GATELINE = 0x3B,
-    SSD1608_WRITE_BORDER = 0x3C,
-    SSD1608_SET_RAMXPOS = 0x44,
-    SSD1608_SET_RAMYPOS = 0x45,
-    SSD1608_SET_RAMXCOUNT = 0x4E,
-    SSD1608_SET_RAMYCOUNT = 0x4F,
-    SSD1608_NOP = 0xFF,
 };
 
 #define BUSY_WAIT 0xff
@@ -291,9 +168,6 @@ uint8_t iDCPin, iMOSIPin, iCLKPin, iCSPin, iRSTPin;
 uint8_t x_offset, y_offset; // memory offsets
 int iLEDPin; // backlight
 uint8_t bBitBang;
-// e-paper variables
-const uint8_t *pInitFull; // full update initialization sequence
-const uint8_t *pInitFast; // fast update initialization sequence
 } OBDISP;
 
 #ifdef __cplusplus
@@ -319,8 +193,6 @@ class ONE_BIT_DISPLAY
     void setFlags(int iFlags);
     void setContrast(uint8_t ucContrast);
     int display(bool bRefresh = true);
-    int displayFast();
-    int displayPartial(int x, int y, int w, int h, uint8_t *pBuffer = NULL);
     void setBitBang(bool bBitBang);
     void setRender(bool bRAMOnly);
     int I2Cbegin(int iType=OLED_128x64, int iAddr=-1, int32_t iSpeed=400000);
@@ -342,11 +214,8 @@ class ONE_BIT_DISPLAY
     void setCursor(int x, int y);
     void setPower(bool bOn);
     int loadBMP(uint8_t *pBMP, int x, int y, int iFG, int iBG);
-    int loadBMP3(uint8_t *pBMP, int x, int y);
     int16_t getCursorX(void);
     int16_t getCursorY(void);
-    void wake(void);
-    void sleep(void);
     void getTextBounds(const char *string, int16_t x, int16_t y, int16_t *x1, int16_t *y1, uint16_t *w, uint16_t *h);
     void getTextBounds(const String &str, int16_t x, int16_t y, int16_t *x1, int16_t *y1, uint16_t *w, uint16_t *h);
     void setTextWrap(bool bWrap);
@@ -535,14 +404,6 @@ void obdSetContrast(OBDISP *pOBD, unsigned char ucContrast);
 //
 int obdLoadBMP(OBDISP *pOBD, uint8_t *pBMP, int x, int y, int iFG, int iBG);
 //
-// load a 4-bpp Windows bitmap
-// into memory for 3-color (BLACK/WHITE/RED)
-// e-paper displays
-// It does a 'best match' of the colors to
-// B/W/R
-//
-int obdLoadBMP3(OBDISP *pOBD, uint8_t *pBMP, int dx, int dy);
-//
 // Power up/down the display
 // useful for low power situations
 //
@@ -613,11 +474,6 @@ int obdSetPixel(OBDISP *pOBD, int x, int y, unsigned char ucColor, int bRender);
 // optional buffer pointer if no back buffer
 //
 int obdDumpPartial(OBDISP *pOBD, int startx, int starty, int width, int height, uint8_t *pBuffer);
-//
-// Dump a screen faster to an e-ink display
-// Not all displays have support for this
-// if not, the slow update will be used
-int obdDumpFast(OBDISP *pOBD, int startx, int starty, int width, int height);
 //
 // Dump an entire custom buffer to the display
 // useful for custom animation effects

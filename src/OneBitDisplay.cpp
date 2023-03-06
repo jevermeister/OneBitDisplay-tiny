@@ -21,6 +21,8 @@
 #define WIMPY_MCU
 #endif
 
+#define WIMPY_MCU
+
 #ifdef _LINUX_
 #include <stdint.h>
 #include <stdlib.h>
@@ -203,11 +205,6 @@ int ONE_BIT_DISPLAY::loadBMP(uint8_t *pBMP, int x, int y, int iFG, int iBG)
 {
     return obdLoadBMP(&_obd, pBMP, x, y, iFG, iBG);
 } /* loadBMP() */
-
-int ONE_BIT_DISPLAY::loadBMP3(uint8_t *pBMP, int x, int y)
-{
-    return obdLoadBMP3(&_obd, pBMP, x, y);
-} /* loadBMP3() */
 
 void ONE_BIT_DISPLAY::setFont(int iFont)
 {
@@ -460,18 +457,6 @@ uint8_t ONE_BIT_DISPLAY::getRotation(void)
 {
   return _obd.iOrientation;
 }
-void ONE_BIT_DISPLAY::wake(void)
-{
-    if (_obd.type >= EPD42_400x300) {
-        EPDWakeUp(&_obd);
-    }
-}
-void ONE_BIT_DISPLAY::sleep(void)
-{
-    if (_obd.type >= EPD42_400x300) {
-        EPDSleep(&_obd);
-    }
-}
 
 void ONE_BIT_DISPLAY::getTextBounds(const char *string, int16_t x, int16_t y, int16_t *x1, int16_t *y1, uint16_t *w, uint16_t *h)
 {
@@ -527,10 +512,7 @@ void ONE_BIT_DISPLAY::fillEllipse(int16_t x, int16_t y, int32_t rx, int32_t ry, 
 }
 void ONE_BIT_DISPLAY::setPosition(int x, int y, int w, int h)
 {
-    if (_obd.type >= EPD42_400x300)
-        EPDSetPosition(&_obd, x, y, w, h);
-    else
-        obdSetPosition(&_obd, x, y, 1);
+    obdSetPosition(&_obd, x, y, 1);
 } /* setPosition() */
 void ONE_BIT_DISPLAY::pushPixels(uint8_t *pPixels, int iCount)
 {
@@ -543,22 +525,6 @@ void ONE_BIT_DISPLAY::pushImage(int x, int y, int w, int h, uint16_t *pixels)
     (void)x; (void)y; (void)w; (void)h; (void)pixels;
 }
 
-int ONE_BIT_DISPLAY::displayFast()
-{
-    if (_obd.type >= EPD42_400x300 && _obd.iFlags & OBD_HAS_FAST_UPDATE) {
-        obdDumpFast(&_obd, 0, 0, _obd.width, _obd.height);
-        return OBD_SUCCESS;
-    }
-    return OBD_ERROR_NOT_SUPPORTED;
-}
-int ONE_BIT_DISPLAY::displayPartial(int x, int y, int w, int h, uint8_t *pBuffer)
-{
-    if (_obd.type >= EPD42_400x300 && _obd.chip_type == OBD_CHIP_UC8151) {
-        return obdDumpPartial(&_obd, x, y, w, h, pBuffer);
-    } else {
-        return OBD_ERROR_NOT_SUPPORTED;
-    }
-}
 void ONE_BIT_DISPLAY::drawString(const char *pText, int x, int y)
 {
     setCursor(x,y);

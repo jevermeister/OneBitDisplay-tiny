@@ -1132,7 +1132,7 @@ uint8_t bFlipped = 0;
     iOffBits += ((cy-1) * iPitch); // start from bottom
     iPitch = -iPitch;
   }
-    ucFill = (iBG == OBD_WHITE && pOBD->type < EPD42_400x300) ? iBG : 0xff;
+    ucFill = (iBG == OBD_WHITE) ? iBG : 0xff;
     if (!pOBD->ucScreen || iFG == OBD_RED) { // this will override the B/W plane, so invert things
         ucFill = 0x00;
         x = iFG;
@@ -1201,101 +1201,6 @@ uint8_t bFlipped = 0;
   } // for y
   return OBD_SUCCESS;
 } /* obdLoadBMP() */
-//
-// Load a 4-bpp Windows bitmap for a 3-color bitmap
-// Pass the pointer to the beginning of the BMP file
-// First pass version assumes a full screen bitmap
-//
-int obdLoadBMP3(OBDISP *pOBD, uint8_t *pBMP, int dx, int dy)
-{
-int16_t i16, cx, cy, bpp;
-int x, y, iOffBits; // offset to bitmap data
-int iPitch, iDestPitch;
-int iRedOff, iColors, iPalOff;
-uint8_t uc, b, *s, *d;
-uint8_t dst_mask;
-uint8_t bFlipped = 0;
-uint8_t ucColorMap[16];
-    
-    if (!(pOBD->iFlags & OBD_3COLOR) || pOBD->ucScreen == 0)
-        return OBD_ERROR_NOT_SUPPORTED; // if not 3-color EPD or no back buffer, bye-byte
-    iDestPitch = pOBD->width;
-    iRedOff = ((pOBD->height+7)>>3) * iDestPitch;
-    // Need to avoid pgm_read_word because it can cause an
-    // unaligned address exception on the RP2040 for odd addresses
-    i16 = pgm_read_byte(pBMP);
-    i16 += (pgm_read_byte(pBMP+1)<<8);
-    if (i16 != 0x4d42) // must start with 'BM'
-        return OBD_ERROR_BAD_DATA; // not a BMP file
-    cx = pgm_read_byte(&pBMP[18]);
-    cx += (pgm_read_byte(&pBMP[19]) << 8);
-    if (cx + dx > pOBD->width) // must fit on the display
-        return OBD_ERROR_BAD_PARAMETER;
-    cy = pgm_read_byte(&pBMP[22]);
-    cy += (pgm_read_byte(&pBMP[23])<<8);
-    if (cy < 0)
-        cy = -cy;
-    else
-        bFlipped = 1;
-    if (cy + dy > pOBD->height) // must fit on the display
-        return OBD_ERROR_BAD_PARAMETER;
-    if (pgm_read_byte(&pBMP[30]) != 0) // compression must be NONE
-        return OBD_ERROR_BAD_DATA;
-    bpp = pgm_read_byte(&pBMP[28]);
-    if (bpp != 4) // must be 4 bits per pixel
-        return OBD_ERROR_BAD_DATA;
-    iOffBits = pgm_read_byte(&pBMP[10]);
-    iOffBits += (pgm_read_byte(&pBMP[11])<<8);
-    iColors = pgm_read_byte(&pBMP[46]); // colors used BMP field
-    if (iColors == 0 || iColors > (1<<bpp))
-        iColors = (1 << bpp); // full palette
-    iPalOff = iOffBits - (4 * iColors); // start of color palette
-    iPitch = (((cx+1)>>1) + 3) & 0xfffc; // must be DWORD aligned
-    if (bFlipped)
-    {
-        iOffBits += ((cy-1) * iPitch); // start from bottom
-        iPitch = -iPitch;
-    }
-// Map the colors to white/black/red with a simple quantization. Convert colors to G3R3B2 and find the closest value (red in the middle)
-    // white = 0xff, red = 0x1c, black = 0x00
-    for (x=0; x<iColors; x++) {
-        uint8_t r, g, b, uc;
-        b = pgm_read_byte(&pBMP[iPalOff+(x*4)]);
-        g = pgm_read_byte(&pBMP[iPalOff+1+(x*4)]);
-        r = pgm_read_byte(&pBMP[iPalOff+2+(x*4)]);
-        uc = (b >> 6) | ((r >> 5) << 2) | ((g >> 5) << 5);
-        if (uc >= 0x1c) { // check for red/white
-            ucColorMap[x] = ((0xff - uc) < (uc - 0x1c)) ? OBD_WHITE : OBD_RED;
-        } else {
-            ucColorMap[x] = ((0x1c - uc) < uc) ? OBD_RED : OBD_BLACK;
-        }
-     }
-  for (y=0; y<cy; y++)
-  {
-     dst_mask = 1 << ((y+dy) & 7);
-      d = &pOBD->ucScreen[(((y+dy)>>3)*iDestPitch)+dx];
-     s = &pBMP[iOffBits+(y*iPitch)];
-     for (x=0; x<cx; x+=2) // work with pixel pairs
-     {
-         b = pgm_read_byte(s++);
-         d[x] &= ~dst_mask; // clear b/w & red planes to start as white
-         d[x+1] &= ~dst_mask;
-         d[x+iRedOff] &= ~dst_mask;
-         d[x+1+iRedOff] &= ~dst_mask;
-         uc = ucColorMap[b >> 4]; // left pixel
-         if (uc == OBD_BLACK)
-             d[x] |= dst_mask;
-         else if (uc == OBD_RED)
-             d[x+iRedOff] |= dst_mask; // we made it white already
-         uc = ucColorMap[b & 0xf]; // right pixel
-         if (uc == OBD_BLACK)
-             d[x+1] |= dst_mask;
-         else if (uc == OBD_RED)
-             d[x+1+iRedOff] |= dst_mask;
-     } // for x
-  } // for y
-  return OBD_SUCCESS;
-} /* obdLoadBMP3() */
 //
 // Set the current cursor position
 // The column represents the pixel column (0-127)
@@ -1431,11 +1336,6 @@ int iOldFG; // old fg color to make sure red works
       return OBD_SUCCESS; // done
   }
 
-    // e-paper color is inverted compared to OLED/LCD. If we're in bufferless mode, we'll need to
-    // invert the requested color
-    if (pOBD->type >= EPD42_400x300 && !pOBD->ucScreen) {
-        iColor = 1 - iColor; // invert the color
-    }
     if (x == -1 || y == -1) // use the cursor position
     {
         x = pOBD->iCursorX; y = pOBD->iCursorY;
@@ -1809,12 +1709,6 @@ int iPitch, iRedOffset = 0;
  
    if (pOBD == NULL || pFont == NULL)
       return OBD_ERROR_BAD_PARAMETER;
-    if (pOBD->ucScreen == NULL && pOBD->type >= EPD42_400x300) {
-        // EPD direct draw mode; colors are inverted
-        if (ucColor == OBD_BLACK)
-            ucColor = 1-ucColor;
-        ucFill = 0xff;
-    }
     if (x == -1)
         x = pOBD->iCursorX;
     if (y == -1)
@@ -1953,7 +1847,7 @@ uint8_t iCols, iLines;
    }
 
   pOBD->iCursorX = pOBD->iCursorY = 0;
-  if (pOBD->type == LCD_VIRTUAL || pOBD->type >= SHARP_144x168) // special display types
+  if (pOBD->type == LCD_VIRTUAL) // special display type
   {
       if (pOBD->ucScreen) {
           int iSize = pOBD->width * ((pOBD->height+7)/8);
@@ -1974,41 +1868,6 @@ uint8_t iCols, iLines;
               memset(pOBD->ucScreen, ucData, iSize);
           }
       }
-#ifndef MEMORY_ONLY
-      else if (pOBD->type >= EPD42_400x300) {
-          uint8_t ucPattern1 = 0xff, ucPattern2 = 0xff; // assume white
-          uint8_t ucRAM1, ucRAM2;
-          int iOldRotation;
-          if (pOBD->iFlags & OBD_3COLOR) {
-              ucPattern2 = 0x00; // red plane is not inverted
-              if (ucData == OBD_BLACK)
-                  ucPattern1 = 0x00;
-              else if (ucData == OBD_RED)
-                  ucPattern2 = 0xff;
-          } else { // black/white
-              if (ucData == OBD_BLACK)
-                  ucPattern1 = ucPattern2 = 0x00;
-          }
-          ucRAM1 = (pOBD->chip_type == OBD_CHIP_UC8151) ? (uint8_t)UC8151_DTM1 : (uint8_t)SSD1608_WRITE_RAM;
-          ucRAM2 = (pOBD->chip_type == OBD_CHIP_UC8151) ? (uint8_t)UC8151_DTM2 : (uint8_t)SSD1608_WRITE_ALTRAM;
-          // Force 0 rotation because bufferless operation
-          // will miss pixel rows not a multiple of 8
-          // when rotated 90 (e.g. 122x250 resolution)
-          iOldRotation = pOBD->iOrientation;
-          pOBD->iOrientation = 0;
-          EPDSetPosition(pOBD, 0,0,pOBD->native_width, pOBD->native_height);
-          if (pOBD->type == EPD579_792x272) {
-              EPDFill(pOBD, ucRAM1, ucPattern1);
-              EPDFill(pOBD, ucRAM2, ~ucPattern1);
-              EPDFill(pOBD, ucRAM1 | 0x80, ucPattern1);
-              EPDFill(pOBD, ucRAM2 | 0x80, ~ucPattern1);
-          } else {
-              EPDFill(pOBD, ucRAM1, ucPattern1);
-              EPDFill(pOBD, ucRAM2, ucPattern2);
-          }
-          pOBD->iOrientation = iOldRotation;
-      }
-#endif // !MEMORY_ONLY
      return;
   }
   if (pOBD->iOrientation == 0 || pOBD->iOrientation == 180) {
@@ -2085,13 +1944,6 @@ void obdDrawLine(OBDISP *pOBD, int x1, int y1, int x2, int y2, uint8_t ucColor, 
     }
     if (!pOBD->ucScreen) { // no back buffer, draw in local buffer
         bRender = 1; // make sure it gets transmitted
-        if (pOBD->type >= EPD42_400x300) {
-            // no back buffer on EPD means we may need to invert the color
-            if (ucColor == OBD_RED)
-                ucColor = OBD_BLACK;
-            else
-                ucColor = 1-ucColor; // swap black/white
-        }
         if (ucColor == OBD_BLACK) // fill with opposite color
             ucFill = 0;
         else
