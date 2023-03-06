@@ -243,11 +243,6 @@ uint8_t ucCMD;
         case LCD_NOKIA5110:
             ucCMD = (bOn) ? 0x20 : 0x24;
             break;
-#if !defined( WIMPY_MCU ) && !defined(__AVR__)
-        case LCD_ST7302:
-            ucCMD = (bOn) ? 0x29 : 0x28;
-            break;
-#endif
         default: // all other supported displays
             ucCMD = (bOn) ? 0xaf : 0xae;
             break;
@@ -361,14 +356,6 @@ void obdSPIInit(OBDISP *pOBD, int iType, int iDC, int iCS, int iReset, int iMOSI
     initSPI(pOBD, iSpeed, iMOSI, iCLK, iCS);
     pOBD->native_width = pOBD->width = 128; // assume 128x64
     pOBD->height = 64;
-#if !defined( WIMPY_MCU ) && !defined(__AVR__)
-    if (iType == LCD_ST7302)
-    {
-        pOBD->native_width = pOBD->width = 250;
-        pOBD->native_height = pOBD->height = 122;
-        pOBD->can_flip = 0;
-    }
-#endif
     if (iType == OLED_80x128)
     {
         pOBD->native_width = pOBD->width = 80;
@@ -936,11 +923,6 @@ void obdSetPosition(OBDISP *pOBD, int x, int y, int bRender)
 unsigned char buf[4];
 int iPitch = pOBD->width;
 
-#if !defined( WIMPY_MCU ) && !defined(__AVR__)
-    if (pOBD->type == LCD_ST7302) { // special case for ST7302
-        obdST7302SetPos(pOBD, x, y);
-    }
-#endif // !WIMPY_MCU
     y >>= 3; // DEBUG - since we address the display by lines of 8 pixels
   pOBD->iScreenOffset = (y*iPitch)+x;
 

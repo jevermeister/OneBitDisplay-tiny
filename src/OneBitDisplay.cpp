@@ -17,11 +17,9 @@
 // This define (WIMPY_MCU) precludes the use of hardware interfaces
 // such as I2C & SPI
 //
-#if defined (__AVR_ATtiny85__) || defined (ARDUINO_ARCH_MCS51)
+#if defined (__AVR_ATtiny85__) || defined (ARDUINO_ARCH_MCS51) || defined (STM32F103x6)
 #define WIMPY_MCU
 #endif
-
-#define WIMPY_MCU
 
 #ifdef _LINUX_
 #include <stdint.h>

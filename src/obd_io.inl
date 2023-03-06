@@ -374,7 +374,7 @@ static void RawWriteData(OBDISP *pOBD, unsigned char *pData, int iLen)
           }
       }
 //#endif
-    if (pOBD->iCSPin != 0xff && pOBD->type != SHARP_144x168 && pOBD->type != SHARP_400x240)
+    if (pOBD->iCSPin != 0xff)
       digitalWrite(pOBD->iCSPin, HIGH);
   }
   else // must be I2C
